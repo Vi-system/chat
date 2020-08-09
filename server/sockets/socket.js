@@ -16,19 +16,25 @@ io.on('connection', (client) => {
         }
 
         client.join(data.sala);
-        callback(`Conectado a la sala: ${data.sala}`);
 
-        usuarios.agregar_persona(client.id, data.nombre, data.sala).filter((p) => p.sala === data.sala);
+        let sala_usuarios = usuarios
+            .agregar_persona(client.id, data.nombre, data.sala)
+            .filter((p) => p.sala === data.sala);
 
         client.broadcast.to(data.sala).emit('listaPersonas', usuarios.get_personas_por_salas(data.sala));
+        client.broadcast.to(data.sala).emit('crearMensaje', crearMensaje('Admin', `${data.nombre} se unió`));
+
+        callback(sala_usuarios);
     });
 
-    client.on('crearMensaje', (data) => {
+    client.on('crearMensaje', (data, callback) => {
         let persona = usuarios.get_persona(client.id);
 
         let mensaje = crearMensaje(persona.nombre, data.mensaje);
 
         client.broadcast.to(persona.sala).emit('crearMensaje', mensaje);
+
+        callback(mensaje);
     });
 
     client.on('disconnect', () => {
